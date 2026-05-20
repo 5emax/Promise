@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PROMISE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09090d;
+    --surface: #101016;
+    --border: #1c1c28;
+    --purple: #6d28d9;
+    --purple-bright: #7c3aed;
+    --purple-glow: rgba(109, 40, 217, 0.25);
+    --green: #16a34a;
+    --green-bright: #22c55e;
+    --red: #dc2626;
+    --red-bright: #ef4444;
+    --text: #f1f5f9;
+    --muted: #3f4a5c;
+    --muted2: #64748b;
+    --display: 'Bebas Neue', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 10%, rgba(109,40,217,0.07) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { width: 100%; max-width: 390px; position: relative; z-index: 1; }
+  #screen-home { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+  .balance-card {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .balance-card::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 140px; height: 140px;
+    background: var(--purple-glow);
+    border-radius: 50%;
+    filter: blur(50px);
+  }
+  .balance-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--muted2); text-transform: uppercase; margin-bottom: 6px; }
+  .balance-amount { font-family: var(--display); font-size: 64px; line-height: 1; letter-spacing: 0.02em; transition: color 0.3s; }
+  .balance-amount.positive { color: var(--green-bright); }
+  .balance-amount.negative { color: var(--red-bright); }
+  .balance-amount.neutral { color: var(--text); }
+  .balance-sol { font-family: var(--mono); font-size: 11px; color: var(--muted2); margin-top: 2px; letter-spacing: 0.08em; }
+  .stats-row { display: flex; gap: 10px; margin-top: 18px; }
+  .stat { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .stat-label { font-size: 9px; letter-spacing: 0.18em; color: var(--muted2); text-transform: uppercase; }
+  .stat-val { font-family: var(--display); font-size: 28px; letter-spacing: 0.02em; margin-top: 1px; line-height: 1; }
+  .stat-val.g { color: var(--green-bright); }
+  .stat-val.r { color: var(--red-bright); }
+  .promise-btn {
+    width: 100%;
+    background: var(--purple);
+    border: none;
+    border-radius: 14px;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s;
+    box-shadow: 0 0 50px rgba(109,40,217,0.35), 0 4px 24px rgba(0,0,0,0.6);
+  }
+  .promise-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 55%); }
+  .promise-btn:active { transform: scale(0.975); }
+  .promise-btn-inner { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; position: relative; }
+  .promise-btn-main { font-family: var(--display); font-size: 42px; color: #fff; letter-spacing: 0.04em; line-height: 1; display: block; }
+  .promise-btn-sub { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 3px; display: block; }
+  .promise-btn-arrow { font-size: 28px; color: rgba(255,255,255,0.4); }
+  .history-section { width: 100%; }
+  .history-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--muted2); text-transform: uppercase; margin-bottom: 10px; }
+  .history-list { display: flex; flex-direction: column; gap: 7px; max-height: 210px; overflow-y: auto; }
+  .history-list::-webkit-scrollbar { display: none; }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.25s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .history-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .history-dot.kept { background: var(--green-bright); box-shadow: 0 0 6px var(--green-bright); }
+  .history-dot.broken { background: var(--red-bright); box-shadow: 0 0 6px var(--red-bright); }
+  .history-text { flex: 1; font-size: 11px; color: var(--text); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.02em; }
+  .history-delta { font-family: var(--display); font-size: 18px; letter-spacing: 0.03em; flex-shrink: 0; }
+  .history-delta.g { color: var(--green-bright); }
+  .history-delta.r { color: var(--red-bright); }
+  .empty-history { text-align: center; color: var(--muted2); font-size: 11px; padding: 24px; border: 1px dashed var(--border); border-radius: 9px; letter-spacing: 0.06em; line-height: 1.8; }
+  .streak-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(109,40,217,0.12); border: 1px solid rgba(109,40,217,0.3); border-radius: 20px; padding: 5px 14px; font-family: var(--mono); font-size: 11px; color: #a78bfa; letter-spacing: 0.12em; }
+  .timer-header { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted2); }
+  .timer-title { font-family: var(--display); font-size: 38px; letter-spacing: 0.03em; color: var(--text); line-height: 1.1; text-align: center; }
+  .timer-ring-wrap { position: relative; width: 160px; height: 160px; }
+  .timer-svg { width: 160px; height: 160px; transform: rotate(-90deg); }
+  .timer-track { fill: none; stroke: var(--border); stroke-width: 4; }
+  .timer-progress { fill: none; stroke: var(--purple-bright); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 439.8; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; filter: drop-shadow(0 0 6px var(--purple-bright)); }
+  .timer-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 68px; letter-spacing: 0.02em; color: var(--text); transition: color 0.3s; }
+  .timer-number.urgent { color: var(--red-bright); }
+  .input-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--muted2); text-transform: uppercase; text-align: left; margin-bottom: 8px; }
+  .promise-textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; color: var(--text); font-family: var(--mono); font-size: 13px; line-height: 1.65; resize: none; outline: none; transition: border-color 0.2s, box-shadow 0.2s; min-height: 88px; letter-spacing: 0.02em; }
+  .promise-textarea:focus { border-color: var(--purple-bright); box-shadow: 0 0 0 2px rgba(124,58,237,0.2); }
+  .promise-textarea::placeholder { color: var(--muted); }
+  .btn-start-timer { width: 100%; background: var(--purple); border: none; border-radius: 12px; padding: 17px; color: #fff; font-family: var(--display); font-size: 22px; letter-spacing: 0.08em; cursor: pointer; transition: opacity 0.2s, transform 0.1s; box-shadow: 0 0 24px rgba(109,40,217,0.3); }
+  .btn-start-timer:active { transform: scale(0.98); opacity: 0.9; }
+  .decision-title { font-family: var(--display); font-size: 44px; letter-spacing: 0.03em; margin-bottom: 6px; }
+  .decision-promise-preview { font-family: var(--mono); font-size: 12px; color: var(--muted2); line-height: 1.6; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; text-align: left; letter-spacing: 0.02em; }
+  .btn-keep { width: 100%; background: transparent; border: 2px solid var(--green-bright); border-radius: 12px; padding: 17px; color: var(--green-bright); font-family: var(--display); font-size: 26px; letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-keep:active { transform: scale(0.98); background: rgba(34,197,94,0.08); }
+  .btn-break { width: 100%; background: transparent; border: 2px solid var(--red-bright); border-radius: 12px; padding: 17px; color: var(--red-bright); font-family: var(--display); font-size: 26px; letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-break:active { transform: scale(0.98); background: rgba(239,68,68,0.08); }
+  .result-icon { font-size: 56px; animation: pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .result-title { font-family: var(--display); font-size: 48px; letter-spacing: 0.04em; }
+  .result-delta { font-family: var(--display); font-size: 64px; letter-spacing: 0.03em; animation: pop 0.35s 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+  .result-why { font-family: var(--mono); font-size: 12px; color: var(--muted2); line-height: 1.65; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 14px; width: 100%; text-align: left; letter-spacing: 0.02em; }
+  .btn-back { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; color: var(--muted2); font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  .btn-back:active { border-color: var(--purple-bright); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="screen-home" style="display:flex; flex-direction:column; align-items:center; gap:28px;">
+    <div class="balance-card">
+      <div class="balance-label">Promise Balance</div>
+      <div class="balance-amount" id="balance-display">0.00</div>
+      <div class="balance-sol">SOL — simulated</div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">Kept</div><div class="stat-val g" id="stat-kept">0</div></div>
+        <div class="stat"><div class="stat-label">Broke</div><div class="stat-val r" id="stat-broken">0</div></div>
+        <div class="stat"><div class="stat-label">Win %</div><div class="stat-val" id="stat-pct">—</div></div>
+      </div>
+    </div>
+    <div id="streak-wrap" style="display:none">
+      <div class="streak-badge">🔥 <span id="streak-count">0</span>x streak</div>
+    </div>
+    <button class="promise-btn" onclick="goToTimer()">
+      <div class="promise-btn-inner">
+        <div>
+          <span class="promise-btn-main">PROMISE</span>
+          <span class="promise-btn-sub">tap before you do anything</span>
+        </div>
+        <div class="promise-btn-arrow">→</div>
+      </div>
+    </button>
+    <div class="history-section">
+      <div class="history-title">Recent</div>
+      <div class="history-list" id="history-list">
+        <div class="empty-history">Nothing here yet.<br>Make your first promise.</div>
+      </div>
+    </div>
+  </div>
+  <div id="screen-timer" style="display:none; flex-direction:column; align-items:center; gap:26px; text-align:center;">
+    <div class="timer-header">Don't touch anything yet</div>
+    <div class="timer-title">What did you<br>tell yourself?</div>
+    <div class="timer-ring-wrap">
+      <svg class="timer-svg" viewBox="0 0 160 160">
+        <circle class="timer-track" cx="80" cy="80" r="70"/>
+        <circle class="timer-progress" id="timer-ring" cx="80" cy="80" r="70"/>
+      </svg>
+      <div class="timer-number" id="timer-display">60</div>
+    </div>
+    <div style="width:100%">
+      <div class="input-label">Write the promise</div>
+      <textarea class="promise-textarea" id="promise-input" placeholder="e.g. I said $30 out, no matter what"></textarea>
+    </div>
+    <button class="btn-start-timer" onclick="goToDecision()">Ready to decide →</button>
+  </div>
+  <div id="screen-decision" style="display:none; flex-direction:column; gap:18px;">
+    <div>
+      <div class="timer-header" style="margin-bottom:6px;">Time's up. Pick one.</div>
+      <div class="decision-title">Keep or Break?</div>
+    </div>
+    <div class="decision-promise-preview" id="decision-preview"></div>
+    <div>
+      <div class="input-label">Why?</div>
+      <textarea class="promise-textarea" id="why-input" placeholder="No excuses. Just what's actually happening."></textarea>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn-keep" onclick="resolve('kept')">I KEPT IT +0.5</button>
+      <button class="btn-break" onclick="resolve('broken')">I BROKE IT −0.5</button>
+    </div>
+  </div>
+  <div id="screen-result" style="display:none; flex-direction:column; align-items:center; gap:22px; text-align:center;">
+    <div class="result-icon" id="result-icon"></div>
+    <div class="result-title" id="result-title"></div>
+    <div class="result-delta" id="result-delta"></div>
+    <div class="result-why" id="result-why-display"></div>
+    <button class="btn-back" onclick="goHome()">← back</button>
+  </div>
+</div>
+<script>
+  let state = { balance: 0, kept: 0, broken: 0, streak: 0, history: [] };
+  try { const s = localStorage.getItem('pw2'); if (s) state = JSON.parse(s); } catch(e) {}
+  function save() { try { localStorage.setItem('pw2', JSON.stringify(state)); } catch(e) {} }
+  let timerInterval = null, timerSeconds = 60, currentPromise = '';
+  const CIRC = 2 * Math.PI * 70;
+  function showScreen(id) {
+    ['screen-home','screen-timer','screen-decision','screen-result'].forEach(s => { document.getElementById(s).style.display = 'none'; });
+    const t = document.getElementById(id); t.style.display = 'flex'; t.style.flexDirection = 'column';
+  }
+  function goHome() { clearTimer(); document.getElementById('promise-input').value = ''; document.getElementById('why-input').value = ''; updateHomeUI(); showScreen('screen-home'); }
+  function goToTimer() {
+    document.getElementById('promise-input').value = '';
+    timerSeconds = 60; updateRing(60);
+    const td = document.getElementById('timer-display'); td.textContent = '60'; td.classList.remove('urgent');
+    const tr = document.getElementById('timer-ring'); tr.style.stroke = 'var(--purple-bright)'; tr.style.filter = 'drop-shadow(0 0 6px var(--purple-bright))';
+    showScreen('screen-timer'); startTimer();
+  }
+  function goToDecision() {
+    currentPromise = document.getElementById('promise-input').value.trim() || '(nothing written)';
+    clearTimer(); document.getElementById('decision-preview').textContent = currentPromise;
+    document.getElementById('why-input').value = ''; showScreen('screen-decision');
+  }
+  function updateRing(s) { document.getElementById('timer-ring').style.strokeDashoffset = CIRC * (1 - s / 60); }
+  function startTimer() {
+    clearTimer(); timerSeconds = 60;
+    timerInterval = setInterval(() => {
+      timerSeconds--; document.getElementById('timer-display').textContent = timerSeconds; updateRing(timerSeconds);
+      if (timerSeconds <= 10) { document.getElementById('timer-display').classList.add('urgent'); document.getElementById('timer-ring').style.stroke = 'var(--red-bright)'; document.getElementById('timer-ring').style.filter = 'drop-shadow(0 0 6px var(--red-bright))'; }
+      if (timerSeconds <= 0) { clearTimer(); goToDecision(); }
+    }, 1000);
+  }
+  function clearTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
+  function resolve(outcome) {
+    const why = document.getElementById('why-input').value.trim() || '(nothing written)';
+    const kept = outcome === 'kept';
+    if (kept) { state.balance += 0.5; state.kept++; state.streak++; } else { state.balance -= 0.5; state.broken++; state.streak = 0; }
+    state.history.unshift({ promise: currentPromise, why, outcome, delta: kept ? '+0.5' : '-0.5' });
+    if (state.history.length > 50) state.history.pop();
+    save();
+    document.getElementById('result-icon').textContent = kept ? '🟢' : '🔴';
+    document.getElementById('result-title').textContent = kept ? 'Kept.' : 'Broke it.';
+    document.getElementById('result-delta').textContent = kept ? '+0.5 SOL' : '-0.5 SOL';
+    document.getElementById('result-delta').style.color = kept ? 'var(--green-bright)' : 'var(--red-bright)';
+    document.getElementById('result-why-display').textContent = why;
+    showScreen('screen-result');
+  }
+  function updateHomeUI() {
+    const bal = state.balance; const el = document.getElementById('balance-display');
+    el.textContent = bal.toFixed(2); el.className = 'balance-amount ' + (bal > 0 ? 'positive' : bal < 0 ? 'negative' : 'neutral');
+    document.getElementById('stat-kept').textContent = state.kept; document.getElementById('stat-broken').textContent = state.broken;
+    const total = state.kept + state.broken; document.getElementById('stat-pct').textContent = total ? Math.round(state.kept / total * 100) + '%' : '—';
+    const sw = document.getElementById('streak-wrap');
+    if (state.streak >= 2) { sw.style.display = 'block'; document.getElementById('streak-count').textContent = state.streak; } else sw.style.display = 'none';
+    const list = document.getElementById('history-list');
+    if (!state.history.length) { list.innerHTML = '<div class="empty-history">Nothing here yet.<br>Make your first promise.</div>'; }
+    else { list.innerHTML = state.history.slice(0,10).map(h => `<div class="history-item"><div class="history-dot ${h.outcome}"></div><div class="history-text">${h.promise}</div><div class="history-delta ${h.outcome === 'kept' ? 'g' : 'r'}">${h.delta}</div></div>`).join(''); }
+  }
+  updateHomeUI(); showScreen('screen-home');
+</script>
+</body>
+</html>
